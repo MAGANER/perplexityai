@@ -15,26 +15,26 @@ class Perplexity:
     For now this class only support one Answer at a time.
     """
     def __init__(self,model="llama-2-70b-chat", print_additional_info=False) -> None:
-        self.session: Session = self.init_session()
+        self.session: Session = self.__init_session()
 
         #False by default because this information is printer for debug purposes
         self.print_additional_info = print_additional_info
         
         self.searching = False #run searching function while this variable is true
         
-        self.t: str = self.get_t()     # timestampParam
-        self.sid: str = self.get_sid() # Security IDentifier
+        self.t: str = self.__get_t()     # timestampParam
+        self.sid: str = self.__get_sid() # Security IDentifier
 
 
-        if not self.ask_anonymous_user():
+        if not self.__ask_anonymous_user():
             self.__print_if_required("Failed to ask anonymous user")
             exit(-1)
         
-        self.ws: WebSocketApp = self.init_websocket()
+        self.ws: WebSocketApp = self.__init_websocket()
         self.ws_message = "" #contains request strng
         self.ws_connected = False #socket isn't connected to the server at the start
         
-        self.auth_session()
+        self.__auth_session()
         
         self.query_str = "" #contains user's prompt
         self.answer = "" #result of searching
@@ -58,14 +58,14 @@ class Perplexity:
             print(text)
 
     
-    def endinstance(self):
+    def __endinstance(self):
         '''stop the connection'''
         __print_if_required("Terminating Perplexity instance...")
         self.ws_connected = False
         if self.ws and self.ws.sock:
             self.ws.sock.shutdown()
         
-    def init_session(self) -> Session:
+    def __init_session(self) -> Session:
         session: Session = Session()
 
         uuid = str(uuid4())
@@ -80,10 +80,10 @@ class Perplexity:
                                  
         return session
 
-    def get_t(self) -> str:
+    def __get_t(self) -> str:
         return format(getrandbits(32), "08x")
 
-    def get_sid(self) -> str:
+    def __get_sid(self) -> str:
         headers = {
             'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36 Edg/115.0.1901.200',
             'origin': 'https://labs.perplexity.ai',
@@ -125,7 +125,7 @@ class Perplexity:
             return None
 
 
-    def ask_anonymous_user(self) -> bool:
+    def __ask_anonymous_user(self) -> bool:
         response = self.session.post(
             url=f"https://labs-api.perplexity.ai/socket.io/?EIO=4&transport=polling&t={self.t}&sid={self.sid}",
             data="40{\"jwt\":\"anonymous-ask-user\"}"
@@ -133,18 +133,18 @@ class Perplexity:
 
         return response == "OK"
                 
-    def get_cookies_str(self) -> str:
+    def __get_cookies_str(self) -> str:
         cookies = ""
         for key, value in self.session.cookies.get_dict().items():
             cookies += f"{key}={value}; "
         return cookies[:-2]
    
-    def on_open(self, ws):
+    def __on_open(self, ws):
         self.__print_if_required("Websocket connection opened.")
         self.ws_connected = True
         self.ws.send("2probe")
         
-    def on_message(self, _, message):
+    def __on_message(self, _, message):
         if message is not None and isinstance(message, str):
             #print(message)
             if message == "2":
@@ -168,40 +168,41 @@ class Perplexity:
         else:
             self.__print_if_required('The message is None or not a string.')
                 
-    def on_close(self, ws, close_status_code, close_msg):
+    def __on_close(self, ws, close_status_code, close_msg):
         self.__print_if_required("Websocket connection closed.", close_status_code, close_msg)
         self.ws_connected = False
-        self.endinstance()
+        self.__endinstance()
 
 
-    def on_error(self, ws, error):
+    def __on_error(self, ws, error):
         self.__print_if_required(f"Websocket error: {error}")
-        self.endinstance()
+        self.__endinstance()
     
-    def init_websocket(self) -> websocket.WebSocketApp:       
+    def __init_websocket(self) -> websocket.WebSocketApp:       
         headers = {
             "Host": "labs-api.perplexity.ai",
             "Connection": "Upgrade",
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36 Edg/115.0.1901.183",
             "Upgrade": "websocket",
             "Origin": "https://labs.perplexity.ai",
-            "Cookie": self.get_cookies_str()
+            "Cookie": self.__get_cookies_str()
         }
 
         self.ws = WebSocketApp(
             url=f"wss://labs-api.perplexity.ai/socket.io/?EIO=4&transport=websocket&sid={self.sid}",
             header=headers,
-            on_open=self.on_open,
-            on_message=self.on_message,
-            on_error=self.on_error,
-            on_close=self.on_close,
+            on_open=self.__on_open,
+            on_message=self.__on_message,
+            on_error=self.__on_error,
+            on_close=self.__on_close,
         )
+
         ws_thread = Thread(target=self.ws.run_forever, kwargs={'sslopt': {"cert_reqs": ssl.CERT_NONE}})
         ws_thread.daemon = True
         ws_thread.start()
         return self.ws
 
-    def auth_session(self) -> None:
+    def __auth_session(self) -> None:
         self.session.get(url="https://www.perplexity.ai/api/auth/session")
 
 
@@ -225,7 +226,7 @@ class Perplexity:
         
         # Waiting for connection to open
         while not self.ws.sock or not self.ws.sock.connected:
-            print("Waiting for connection to open...")
+            self.__print_if_required("Waiting for connection to open...")
             if time() - start_time > timeout:
                 return ""
             sleep(1)
