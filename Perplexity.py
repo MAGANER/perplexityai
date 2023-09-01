@@ -14,41 +14,53 @@ class Perplexity:
     To get started you need to create an instance of this class.
     For now this class only support one Answer at a time.
     """
-    def __init__(self,model="llama-2-70b-chat") -> None:
+    def __init__(self,model="llama-2-70b-chat", print_additional_info=False) -> None:
         self.session: Session = self.init_session()
 
-        self.searching = False
-        self.t: str = self.get_t()
-        self.sid: str = self.get_sid()
-        #self.frontend_uuid = str(uuid4())
-        #self.frontend_session_id = str(uuid4())
-
-        assert self.ask_anonymous_user(), "Failed to ask anonymous user"
-        self.ws: WebSocketApp = self.init_websocket()
-        self.ws_message = ""
-        self.n = 1
-        self.ws_connected = False
-        self.auth_session()
-        self.query_str = ""
-        self.answer = ""
-        self.testcloseconnection = 1
+        #False by default because this information is printer for debug purposes
+        self.print_additional_info = print_additional_info
         
-        if self.check_is_model_available(model):
+        self.searching = False #run searching function while this variable is true
+        
+        self.t: str = self.get_t()     # timestampParam
+        self.sid: str = self.get_sid() # Security IDentifier
+
+
+        if not self.ask_anonymous_user():
+            self.__print_if_required("Failed to ask anonymous user")
+            exit(-1)
+        
+        self.ws: WebSocketApp = self.init_websocket()
+        self.ws_message = "" #contains request strng
+        self.ws_connected = False #socket isn't connected to the server at the start
+        
+        self.auth_session()
+        
+        self.query_str = "" #contains user's prompt
+        self.answer = "" #result of searching
+        
+        if self.__check_is_model_available(model):
+            self.__print_if_required("{} isn't supported!".format(model))
             self.model = model
         else:
             exit(-1)
 
-        sleep(1)
+            
 
-    def check_is_model_available(self,model):
+    def __check_is_model_available(self,model):
         models = ["llama-2-13b-sft","llama-2-70b-chat","llama-2-13b-chat","llama-2-7b-chat"]
         if model in models:
             return True
-        
-        return False
+        else:
+            return False
+    def __print_if_required(self,text):
+        if self.print_additional_info:
+            print(text)
+
     
     def endinstance(self):
-        print("Terminating Perplexity instance...")
+        '''stop the connection'''
+        __print_if_required("Terminating Perplexity instance...")
         self.ws_connected = False
         if self.ws and self.ws.sock:
             self.ws.sock.shutdown()
@@ -103,13 +115,13 @@ class Perplexity:
                 if 'sid' in response_json:
                     return response_json["sid"]
                 else:
-                    print('The "sid" key was not found in the response.')
+                    self.__print_if_required('The "sid" key was not found in the response.')
                     return None
             except Exception as e:
-                print('Error parsing JSON:', e)
+                self.print_if_required('Error parsing JSON:', e)
                 return None
         else:
-            print('Empty response')
+            self.__print_if_required('Empty response')
             return None
 
 
@@ -119,8 +131,7 @@ class Perplexity:
             data="40{\"jwt\":\"anonymous-ask-user\"}"
         ).text
 
-        if response == "OK":
-            return response == "OK"
+        return response == "OK"
                 
     def get_cookies_str(self) -> str:
         cookies = ""
@@ -129,7 +140,7 @@ class Perplexity:
         return cookies[:-2]
    
     def on_open(self, ws):
-        print("Websocket connection opened.")
+        self.__print_if_required("Websocket connection opened.")
         self.ws_connected = True
         self.ws.send("2probe")
         
@@ -155,16 +166,16 @@ class Perplexity:
                     self.answer = output
                     self.searching = False
         else:
-            print('The message is None or not a string.')
+            self.__print_if_required('The message is None or not a string.')
                 
     def on_close(self, ws, close_status_code, close_msg):
-        print("Websocket connection closed.", close_status_code, close_msg)
+        self.__print_if_required("Websocket connection closed.", close_status_code, close_msg)
         self.ws_connected = False
         self.endinstance()
 
 
     def on_error(self, ws, error):
-        print(f"Websocket error: {error}")
+        self.__print_if_required(f"Websocket error: {error}")
         self.endinstance()
     
     def init_websocket(self) -> websocket.WebSocketApp:       
@@ -208,7 +219,6 @@ class Perplexity:
             return self.search(query, retry_count + 1)
 
         self.searching = True
-        self.n += 1
         self.ws_message: str = f'42["perplexity_playground",{{"model":"{self.model}","messages":[{{"role":"user","content":"{formatted_query}","priority":0}}]}}]'
         start_time = time()
         timeout = 20  # Timeout in seconds
