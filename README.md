@@ -4,11 +4,15 @@ A python api to use labs.perplexity.ai
 # Usage
 You can just import the Perplexity class and use it like this:
 ```python
-from Perplexity import Perplexity
+from Perplexity import create_perplexity
 
-perplexity = Perplexity()
-answer = perplexity.search("What is the meaning of life?")
-print(answer)
+ai = create_perplexity()
+if ai is not None:
+    answer = ai.search("What is the meaning of life?")
+    print(answer)
+else:
+    print("unable to connect to server!")
+
 ```
 # The model used can be updated in Perplexity.py
     #Available Models
@@ -16,19 +20,6 @@ print(answer)
     # llama-2-13b-chat
     # llama-2-70b-chat
     self.model = "llama-2-70b-chat"
-
-You can even create a cli tool with it:
-```python
-from Perplexity import Perplexity
-
-perplexity = Perplexity()
-
-while True:
-    inp = str(input("> "))
-    c = perplexity.search(inp)
-    if c:
-        print(c)
-```
 
 # Note on websocket dependency
 Don't use ```pip install websocket```, but ```pip install websocket-client```, since it's the correct package that is used by this class.
