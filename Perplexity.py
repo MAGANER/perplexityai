@@ -8,8 +8,30 @@ from random import getrandbits
 from websocket import WebSocketApp
 import websocket
 import ssl
+import requests
 
-class Perplexity:
+
+def __check_connection():
+    '''check is server up and we can connect to it'''
+    try:
+        response = requests.get("https://www.perplexity.ai/")
+        if response.status_code in [200,403]: #200 is ok and 403 is forbidden, if we get it than server is ok.
+            return True
+        else:
+            return False
+    except Exception as e:
+        print(str(e))
+        return False
+    
+def create_perplexity(model="llama-2-70b-chat",print_additional_info=False):
+    '''it is impossible to create object directly, so you should use this function and it
+       will create object only if server is up'''
+    if __check_connection():
+        return __Perplexity(model,print_additional_info)
+    else:
+        return None
+
+class __Perplexity:
     """A class to interact with the Perplexity website.
     To get started you need to create an instance of this class.
     For now this class only support one Answer at a time.
