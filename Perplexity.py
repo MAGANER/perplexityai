@@ -14,7 +14,7 @@ class Perplexity:
     To get started you need to create an instance of this class.
     For now this class only support one Answer at a time.
     """
-    def __init__(self) -> None:
+    def __init__(self,model="llama-2-70b-chat") -> None:
         self.session: Session = self.init_session()
 
         self.searching = False
@@ -33,15 +33,20 @@ class Perplexity:
         self.answer = ""
         self.testcloseconnection = 1
         
-        #Available Models
-        # llama-2-7b-chat
-        # llama-2-13b-chat
-        # llama-2-70b-chat
-        # llama-2-13b-sft
-        self.model = "llama-2-70b-chat"
+        if self.check_is_model_available(model):
+            self.model = model
+        else:
+            exit(-1)
 
         sleep(1)
+
+    def check_is_model_available(self,model):
+        models = ["llama-2-13b-sft","llama-2-70b-chat","llama-2-13b-chat","llama-2-7b-chat"]
+        if model in models:
+            return True
         
+        return False
+    
     def endinstance(self):
         print("Terminating Perplexity instance...")
         self.ws_connected = False
