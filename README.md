@@ -29,3 +29,8 @@ while True:
     if c:
         print(c)
 ```
+
+# Note on websocket dependency
+Don't use ```pip install websocket```, but ```pip install websocket-client```, since it's the correct package that is used by this class.
+
+
