@@ -1,6 +1,10 @@
 # perplexityai
 A python api to use labs.perplexity.ai
 
+#NOTE:
+This stopped working due to Javascript/Bot checks after they moved to Cloudflare.<br>
+For a working version using Selenium see: https://github.com/ShaneOss/perplexitylabs/
+
 # Usage
 You can just import the Perplexity class and use it like this:
 ```python
