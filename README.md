@@ -1,7 +1,7 @@
 # perplexityai
 A python api to use labs.perplexity.ai
 
-#NOTE:
+# NOTE:
 This stopped working due to Javascript/Bot checks after they moved to Cloudflare.<br>
 For a working version using Selenium see: https://github.com/ShaneOss/perplexitylabs/
 
